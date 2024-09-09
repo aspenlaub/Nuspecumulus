@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35222.181
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nuspecumulus", "Nuspecumulus.csproj", "{7C420577-05C7-4CE0-B5AB-06D3C120A325}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nuspecumulus.Test", "Test\Nuspecumulus.Test.csproj", "{BAB4BF30-A92A-4817-9C4A-2289345C9482}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7C420577-05C7-4CE0-B5AB-06D3C120A325}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C420577-05C7-4CE0-B5AB-06D3C120A325}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C420577-05C7-4CE0-B5AB-06D3C120A325}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C420577-05C7-4CE0-B5AB-06D3C120A325}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BAB4BF30-A92A-4817-9C4A-2289345C9482}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAB4BF30-A92A-4817-9C4A-2289345C9482}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAB4BF30-A92A-4817-9C4A-2289345C9482}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAB4BF30-A92A-4817-9C4A-2289345C9482}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C015525C-B7A4-4E7D-8CCD-DEBF82570B38}
+	EndGlobalSection
+EndGlobal
