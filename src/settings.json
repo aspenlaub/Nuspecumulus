@@ -6,5 +6,7 @@
     "build\\",
     "lib\\",
     "runtimes\\"
-  ]
+  ],
+  "VersionStartTag": "<version>",
+  "VersionEndTag": "</version>"
 }

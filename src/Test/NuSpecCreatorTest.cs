@@ -17,6 +17,7 @@ using Aspenlaub.Net.GitHub.CSharp.Pegh.Extensions;
 using System.Xml;
 using Aspenlaub.Net.GitHub.CSharp.Nuclide.Entities;
 using Aspenlaub.Net.GitHub.CSharp.Pegh.Interfaces;
+using System.Text.Json;
 
 namespace Aspenlaub.Net.GitHub.CSharp.Nuspecumulus.Test;
 
@@ -100,8 +101,21 @@ public class NuSpecCreatorTest {
             PakledTarget.Folder().SubFolder("src").FullName + @"\Pakled.csproj",
             developerSettings.GitHubRepositoryUrl,
             developerSettings.Author,
-            developerSettings.FaviconUrl);
+        developerSettings.FaviconUrl);
 
-        Assert.That(nuspecumulusDocument.ToString(), Is.EqualTo(nuclideDocument.ToString()));
+        var configuration = JsonSerializer.Deserialize<Entities.Configuration>(await File.ReadAllTextAsync("settings.json"));
+        Assert.That(configuration, Is.Not.Null);
+        Assert.That(NormalizeNuspec(nuspecumulusDocument, configuration), Is.EqualTo(NormalizeNuspec(nuclideDocument, configuration)));
+    }
+
+    private static string NormalizeNuspec(XDocument nuspec, Entities.Configuration configuration) {
+        var nuspecAsString = nuspec.ToString();
+        var pos = nuspecAsString.IndexOf(configuration.VersionStartTag);
+        Assert.That(pos, Is.Positive);
+        var pos2 = nuspecAsString.IndexOf(configuration.VersionEndTag, pos + 1);
+        Assert.That(pos2, Is.Positive);
+        nuspecAsString = nuspecAsString.Substring(0, pos) + "<version />" + nuspecAsString.Substring(pos2 + 1 + configuration.VersionEndTag.Length);
+
+        return nuspecAsString;
     }
 }

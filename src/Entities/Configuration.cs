@@ -5,4 +5,6 @@ public class Configuration {
     public string NuSpecNamespaceUri { get; init; } = "";
     public string FirstBuildDate { get; init; } = "";
     public string[] ContentIncludeFolders { get; init; } = new string[0];
+    public string VersionStartTag { get; init; } = "";
+    public string VersionEndTag { get; init; } = "";
 }
