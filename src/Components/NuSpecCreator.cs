@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Globalization;
+using System.Text.Json;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -46,9 +47,8 @@ public class NuSpecCreator : INuSpecCreator {
             }
 
             if (packageVersion == null) { continue; }
-            if (dependencyIdsAndVersions.ContainsKey(packageId)) { continue; }
 
-            dependencyIdsAndVersions[packageId] = packageVersion;
+            dependencyIdsAndVersions.TryAdd(packageId, packageVersion);
         }
 
         var solutionId = projectFileFullName.Substring(projectFileFullName.LastIndexOf('\\') + 1).Replace(".csproj", "");
@@ -63,7 +63,7 @@ public class NuSpecCreator : INuSpecCreator {
         if (version == null) {
             return document;
         }
-        version.Build = DateTime.UtcNow.Subtract(DateTime.Parse(configuration.FirstBuildDate)).Days;
+        version.Build = DateTime.UtcNow.Subtract(DateTime.ParseExact(configuration.FirstBuildDate, "yyyy-MM-dd", CultureInfo.InvariantCulture)).Days;
         version.Revision = (int)Math.Floor(DateTime.UtcNow.Subtract(DateTime.UtcNow.Date).TotalMinutes);
 
         var docElement = new XElement(nugetNamespace + "package");
@@ -92,29 +92,29 @@ public class NuSpecCreator : INuSpecCreator {
             = projectDocument.XPathSelectElements("./Project/PropertyGroup/PackageId", namespaceManager).FirstOrDefault()?.Value
               ?? rootNamespaceElement.Value;
 
-        var element = new XElement(nugetNamespace + @"metadata");
-        foreach (var elementName in new[] { @"id", @"title", @"description", @"releaseNotes" }) {
+        var element = new XElement(nugetNamespace + "metadata");
+        foreach (var elementName in new[] { "id", "title", "description", "releaseNotes" }) {
             element.Add(
-                new XElement(nugetNamespace + elementName, elementName == @"id" ? packageId : rootNamespaceElement.Value));
+                new XElement(nugetNamespace + elementName, elementName == "id" ? packageId : rootNamespaceElement.Value));
         }
 
-        foreach (var elementName in new[] { @"authors", @"owners" }) {
+        foreach (var elementName in new[] { "authors", "owners" }) {
             element.Add(new XElement(nugetNamespace + elementName, author));
         }
 
-        element.Add(new XElement(nugetNamespace + @"projectUrl", organizationUrl + solutionId));
-        element.Add(new XElement(nugetNamespace + @"icon", "packageicon.png"));
-        element.Add(new XElement(nugetNamespace + @"iconUrl", faviconUrl));
-        element.Add(new XElement(nugetNamespace + @"requireLicenseAcceptance", @"false"));
+        element.Add(new XElement(nugetNamespace + "projectUrl", organizationUrl + solutionId));
+        element.Add(new XElement(nugetNamespace + "icon", "packageicon.png"));
+        element.Add(new XElement(nugetNamespace + "iconUrl", faviconUrl));
+        element.Add(new XElement(nugetNamespace + "requireLicenseAcceptance", "false"));
         var year = DateTime.Now.Year;
-        element.Add(new XElement(nugetNamespace + @"copyright", $"Copyright {year}"));
-        element.Add(new XElement(nugetNamespace + @"version", version));
+        element.Add(new XElement(nugetNamespace + "copyright", $"Copyright {year}"));
+        element.Add(new XElement(nugetNamespace + "version", version));
         tags = tags.Where(t => !t.Contains('<') && !t.Contains('>') && !t.Contains('&') && !t.Contains(' ')).ToList();
         if (tags.Any()) {
-            element.Add(new XElement(nugetNamespace + @"tags", string.Join(" ", tags)));
+            element.Add(new XElement(nugetNamespace + "tags", string.Join(" ", tags)));
         }
 
-        var dependenciesElement = new XElement(nugetNamespace + @"dependencies");
+        var dependenciesElement = new XElement(nugetNamespace + "dependencies");
         element.Add(dependenciesElement);
 
         var groupElement = new XElement(nugetNamespace + "group", new XAttribute("targetFramework", "net" + TargetFrameworkToLibNetSuffix(targetFramework)));
@@ -123,8 +123,8 @@ public class NuSpecCreator : INuSpecCreator {
 
         foreach (var dependencyElement in dependencyIdsAndVersions.Select(dependencyIdAndVersion
                      => dependencyIdAndVersion.Value == ""
-                         ? new XElement(nugetNamespace + @"dependency", new XAttribute("id", dependencyIdAndVersion.Key))
-                         : new XElement(nugetNamespace + @"dependency", new XAttribute("id", dependencyIdAndVersion.Key), new XAttribute("version", dependencyIdAndVersion.Value)))) {
+                         ? new XElement(nugetNamespace + "dependency", new XAttribute("id", dependencyIdAndVersion.Key))
+                         : new XElement(nugetNamespace + "dependency", new XAttribute("id", dependencyIdAndVersion.Key), new XAttribute("version", dependencyIdAndVersion.Value)))) {
             dependenciesElement.Add(dependencyElement);
         }
 
@@ -161,39 +161,39 @@ public class NuSpecCreator : INuSpecCreator {
             return null;
         }
 
-        var filesElement = new XElement(nugetNamespace + @"files");
+        var filesElement = new XElement(nugetNamespace + "files");
         var topLevelNamespace = rootNamespaceElement.Value;
         if (!topLevelNamespace.Contains('.')) {
             return null;
         }
 
         topLevelNamespace = topLevelNamespace.Substring(0, topLevelNamespace.IndexOf('.'));
-        foreach (var fileElement in new[] { @"dll", @"pdb" }.Select(extension
-                     => new XElement(nugetNamespace + @"file",
-                         new XAttribute(@"src", outputPath + topLevelNamespace + ".*." + extension),
-                         new XAttribute(@"exclude", string.Join(";", outputPath + @"*.Test*.*", outputPath + @"*.exe", outputPath + @"ref\*.*")),
-                         new XAttribute(@"target", @"lib\net" + TargetFrameworkElementToLibNetSuffix(targetFrameworkElement))))) {
+        foreach (var fileElement in new[] { "dll", "pdb" }.Select(extension
+                     => new XElement(nugetNamespace + "file",
+                         new XAttribute("src", outputPath + topLevelNamespace + ".*." + extension),
+                         new XAttribute("exclude", string.Join(";", outputPath + "*.Test*.*", outputPath + "*.exe", outputPath + @"ref\*.*")),
+                         new XAttribute("target", @"lib\net" + TargetFrameworkElementToLibNetSuffix(targetFrameworkElement))))) {
             filesElement.Add(fileElement);
         }
 
-        filesElement.Add(new XElement(nugetNamespace + @"file",
-            new XAttribute(@"src", outputPath + "packageicon.png"),
-            new XAttribute(@"target", "")));
+        filesElement.Add(new XElement(nugetNamespace + "file",
+            new XAttribute("src", outputPath + "packageicon.png"),
+            new XAttribute("target", "")));
 
         var foldersToPack = projectDocument.XPathSelectElements("./Project/ItemGroup/Content", namespaceManager)
             .Where(x => IncludesFileToPack(x, configuration))
             .Select(x => IncludeAttributeValue(x, configuration))
-            .Select(f => f.Substring(0, f.LastIndexOf('\\')))
+            .Select(f => f?.Substring(0, f.LastIndexOf('\\')) ?? "")
             .Distinct().ToList();
         foreach (var folderToPack in foldersToPack) {
             var target = folderToPack;
             if (folderToPack.StartsWith("lib")) {
                 target = @"lib\net" + TargetFrameworkElementToLibNetSuffix(targetFrameworkElement) + target.Substring(3);
             }
-            filesElement.Add(new XElement(nugetNamespace + @"file",
-                new XAttribute(@"src", outputPath + folderToPack + @"\*.*"),
-                new XAttribute(@"exclude", ""),
-                new XAttribute(@"target", target)));
+            filesElement.Add(new XElement(nugetNamespace + "file",
+                new XAttribute("src", outputPath + folderToPack + @"\*.*"),
+                new XAttribute("exclude", ""),
+                new XAttribute("target", target)));
         }
 
         return filesElement;

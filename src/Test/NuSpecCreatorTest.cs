@@ -114,7 +114,7 @@ public class NuSpecCreatorTest {
         var developerSettings = await NuclideContainer.Resolve<ISecretRepository>().GetAsync(developerSettingsSecret, errorsAndInfos);
         Assert.That(developerSettings, Is.Not.Null);
 
-        var versionFile = target.Folder().SubFolder("src").FullName + $"\\version.json";
+        var versionFile = target.Folder().SubFolder("src").FullName + "\\version.json";
         if (!File.Exists(versionFile)) {
             var version = new Entities.Version { Major = 2, Minor = 4 };
             await File.WriteAllTextAsync(versionFile, JsonSerializer.Serialize(version));
@@ -134,9 +134,9 @@ public class NuSpecCreatorTest {
 
     private static string NormalizeNuspec(XDocument nuspec, Entities.Configuration configuration) {
         var nuspecAsString = nuspec.ToString();
-        var pos = nuspecAsString.IndexOf(configuration.VersionStartTag);
+        var pos = nuspecAsString.IndexOf(configuration.VersionStartTag, StringComparison.InvariantCulture);
         Assert.That(pos, Is.Positive);
-        var pos2 = nuspecAsString.IndexOf(configuration.VersionEndTag, pos + 1);
+        var pos2 = nuspecAsString.IndexOf(configuration.VersionEndTag, pos + 1, StringComparison.InvariantCulture);
         Assert.That(pos2, Is.Positive);
         Assert.That(pos2, Is.LessThan(pos + configuration.VersionStartTag.Length + 16));
         nuspecAsString = nuspecAsString.Substring(0, pos) + "<version />" + nuspecAsString.Substring(pos2 + 1 + configuration.VersionEndTag.Length);
