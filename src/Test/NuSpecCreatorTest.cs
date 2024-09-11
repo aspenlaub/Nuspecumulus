@@ -24,6 +24,7 @@ namespace Aspenlaub.Net.GitHub.CSharp.Nuspecumulus.Test;
 [TestFixture]
 public class NuSpecCreatorTest {
     private static readonly TestTargetFolder PakledTarget = new(nameof(NuSpecCreator), "Pakled");
+    private static readonly TestTargetFolder GittyTarget = new(nameof(NuSpecCreator), "Gitty");
     private static readonly IContainer NuclideContainer = new ContainerBuilder()
         .UseGittyTestUtilities().UseProtch().UseNuclideProtchGittyAndPegh("Nuspecumulus", new DummyCsArgumentPrompter()).Build();
     private static IGitUtilities GitUtilities => NuclideContainer.Resolve<IGitUtilities>();
@@ -37,12 +38,17 @@ public class NuSpecCreatorTest {
 
     [SetUp]
     public void Initialize() {
-        PakledTarget.Delete();
+        DeleteTargets();
     }
 
     [TearDown]
     public void Cleanup() {
+        DeleteTargets();
+    }
+
+    private void DeleteTargets() {
         PakledTarget.Delete();
+        GittyTarget.Delete();
     }
 
     [Test]
@@ -53,26 +59,38 @@ public class NuSpecCreatorTest {
 
     [Test]
     public async Task CanCreateNuSpecForPakled() {
+        await CanCreateNuSpecForAsync(PakledTarget);
+    }
+
+    [Test]
+    public async Task CanCreateNuSpecForGitty() {
+        await CanCreateNuSpecForAsync(GittyTarget);
+    }
+
+    private async Task CanCreateNuSpecForAsync(TestTargetFolder target) {
         var errorsAndInfos = new ErrorsAndInfos();
-        const string url = "https://github.com/aspenlaub/Pakled.git";
-        GitUtilities.Clone(url, "master", PakledTarget.Folder(), new CloneOptions { BranchName = "master" }, true, errorsAndInfos);
+        var solutionId = target.SolutionId;
+        var url = $"https://github.com/aspenlaub/{solutionId}.git";
+        GitUtilities.Clone(url, "master", target.Folder(), new CloneOptions { BranchName = "master" }, true, errorsAndInfos);
         Assert.That(errorsAndInfos.Errors.Any(), Is.False, errorsAndInfos.ErrorsPlusRelevantInfos());
 
         NuclideContainer.Resolve<IDotNetCakeInstaller>().InstallOrUpdateGlobalDotNetCakeIfNecessary(errorsAndInfos);
         Assert.That(errorsAndInfos.Errors.Any(), Is.False, errorsAndInfos.ErrorsPlusRelevantInfos());
 
         NuclideContainer.Resolve<IEmbeddedCakeScriptCopier>().CopyCakeScriptEmbeddedInAssembly(Assembly.GetExecutingAssembly(), BuildCake.Standard,
-            PakledTarget, errorsAndInfos);
+            target, errorsAndInfos);
         Assert.That(errorsAndInfos.Errors.Any(), Is.False, errorsAndInfos.ErrorsPlusRelevantInfos());
 
-        NuclideContainer.Resolve<ITestTargetRunner>().RunBuildCakeScript(BuildCake.Standard, PakledTarget,
-            "IgnoreOutdatedBuildCakePendingChangesAndDoCreateOrPushPackage", errorsAndInfos);
+        NuclideContainer.Resolve<ITestTargetRunner>().RunBuildCakeScript(BuildCake.Standard, target,
+            "CleanRestorePull", errorsAndInfos);
         Assert.That(errorsAndInfos.Errors.Any(), Is.False, errorsAndInfos.ErrorsPlusRelevantInfos());
-        Assert.That(errorsAndInfos.Infos.Count(i => i.Contains("Results File:")), Is.EqualTo(2));
+        NuclideContainer.Resolve<ITestTargetRunner>().RunBuildCakeScript(BuildCake.Standard, target,
+            "ReleaseBuild", errorsAndInfos);
+        Assert.That(errorsAndInfos.Errors.Any(), Is.False, errorsAndInfos.ErrorsPlusRelevantInfos());
 
         var nuclideCreator = NuclideContainer.Resolve<Nuclide.Interfaces.INuSpecCreator>();
-        var solutionFileFullName = PakledTarget.Folder().SubFolder("src").FullName + @"\" + PakledTarget.SolutionId + ".sln";
-        var projectFileFullName = PakledTarget.Folder().SubFolder("src").FullName + @"\" + PakledTarget.SolutionId + ".csproj";
+        var solutionFileFullName = target.Folder().SubFolder("src").FullName + @"\" + target.SolutionId + ".sln";
+        var projectFileFullName = target.Folder().SubFolder("src").FullName + @"\" + target.SolutionId + ".csproj";
         Assert.That(File.Exists(projectFileFullName), Is.True);
         var nuclideDocument = XDocument.Load(projectFileFullName);
 
@@ -84,7 +102,7 @@ public class NuSpecCreatorTest {
         Assert.That(targetFrameworkElement, Is.Not.Null);
         var rootNamespaceElement = nuclideDocument.XPathSelectElements("./Project/PropertyGroup/RootNamespace", namespaceManager).FirstOrDefault();
         Assert.That(rootNamespaceElement, Is.Not.Null);
-        var checkedOutBranch = GitUtilities.CheckedOutBranch(PakledTarget.Folder());
+        var checkedOutBranch = GitUtilities.CheckedOutBranch(target.Folder());
         nuclideDocument = await nuclideCreator.CreateNuSpecAsync(solutionFileFullName, checkedOutBranch,
             new List<string>(), errorsAndInfos);
         Assert.That(nuclideDocument, Is.Not.Null);
@@ -96,12 +114,18 @@ public class NuSpecCreatorTest {
         var developerSettings = await NuclideContainer.Resolve<ISecretRepository>().GetAsync(developerSettingsSecret, errorsAndInfos);
         Assert.That(developerSettings, Is.Not.Null);
 
+        var versionFile = target.Folder().SubFolder("src").FullName + $"\\version.json";
+        if (!File.Exists(versionFile)) {
+            var version = new Entities.Version { Major = 2, Minor = 4 };
+            await File.WriteAllTextAsync(versionFile, JsonSerializer.Serialize(version));
+        }
         var sut = NuspecumulusContainer.Resolve<INuSpecCreator>();
-        var nuspecumulusDocument = await sut.CreateNuSpecAsync(PakledTarget.Folder().FullName,
-            PakledTarget.Folder().SubFolder("src").FullName + @"\Pakled.csproj",
+        var nuspecumulusDocument = await sut.CreateNuSpecAsync(
+            target.Folder().SubFolder("src").FullName + $"\\{solutionId}.csproj",
             developerSettings.GitHubRepositoryUrl,
             developerSettings.Author,
-        developerSettings.FaviconUrl);
+            developerSettings.FaviconUrl,
+            checkedOutBranch);
 
         var configuration = JsonSerializer.Deserialize<Entities.Configuration>(await File.ReadAllTextAsync("settings.json"));
         Assert.That(configuration, Is.Not.Null);
@@ -114,6 +138,7 @@ public class NuSpecCreatorTest {
         Assert.That(pos, Is.Positive);
         var pos2 = nuspecAsString.IndexOf(configuration.VersionEndTag, pos + 1);
         Assert.That(pos2, Is.Positive);
+        Assert.That(pos2, Is.LessThan(pos + configuration.VersionStartTag.Length + 16));
         nuspecAsString = nuspecAsString.Substring(0, pos) + "<version />" + nuspecAsString.Substring(pos2 + 1 + configuration.VersionEndTag.Length);
 
         return nuspecAsString;

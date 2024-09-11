@@ -7,21 +7,19 @@ using Aspenlaub.Net.GitHub.CSharp.Nuspecumulus.Interfaces;
 namespace Aspenlaub.Net.GitHub.CSharp.Nuspecumulus.Components;
 
 public class NuSpecCreator : INuSpecCreator {
-    public async Task<XDocument> CreateNuSpecAsync(string repositoryFolder, string projectFileFullName,
-            string organizationUrl, string author, string faviconUrl) {
-        if (!Directory.Exists(repositoryFolder)) {
-            throw new FileNotFoundException(repositoryFolder);
-        }
+    public async Task<XDocument> CreateNuSpecAsync(string projectFileFullName,
+            string organizationUrl, string author, string faviconUrl, string checkedOutBranch) {
         if (!File.Exists(projectFileFullName)) {
             throw new FileNotFoundException(projectFileFullName);
-        }
-        if (!projectFileFullName.StartsWith(repositoryFolder)) {
-            throw new NotSupportedException("Project file must be underneath the repository folder");
         }
 
         var configuration = JsonSerializer.Deserialize<Entities.Configuration>(await File.ReadAllTextAsync("settings.json"));
         if (configuration == null) {
             throw new InvalidDataException("Settings file not found or corrupt");
+        }
+
+        if ((checkedOutBranch != "master") && (checkedOutBranch != "main")) {
+            throw new NotSupportedException("Packaging is restricted to the main branch");
         }
 
         var namespaceManager = new XmlNamespaceManager(new NameTable());
