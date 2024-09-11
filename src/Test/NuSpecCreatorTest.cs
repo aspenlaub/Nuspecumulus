@@ -57,6 +57,9 @@ public class NuSpecCreatorTest {
         GitUtilities.Clone(url, "master", PakledTarget.Folder(), new CloneOptions { BranchName = "master" }, true, errorsAndInfos);
         Assert.That(errorsAndInfos.Errors.Any(), Is.False, errorsAndInfos.ErrorsPlusRelevantInfos());
 
+        NuclideContainer.Resolve<IDotNetCakeInstaller>().InstallOrUpdateGlobalDotNetCakeIfNecessary(errorsAndInfos);
+        Assert.That(errorsAndInfos.Errors.Any(), Is.False, errorsAndInfos.ErrorsPlusRelevantInfos());
+
         NuclideContainer.Resolve<IEmbeddedCakeScriptCopier>().CopyCakeScriptEmbeddedInAssembly(Assembly.GetExecutingAssembly(), BuildCake.Standard,
             PakledTarget, errorsAndInfos);
         Assert.That(errorsAndInfos.Errors.Any(), Is.False, errorsAndInfos.ErrorsPlusRelevantInfos());
@@ -95,7 +98,6 @@ public class NuSpecCreatorTest {
         var sut = NuspecumulusContainer.Resolve<INuSpecCreator>();
         var nuspecumulusDocument = await sut.CreateNuSpecAsync(PakledTarget.Folder().FullName,
             PakledTarget.Folder().SubFolder("src").FullName + @"\Pakled.csproj",
-            PakledTarget.Folder().SubFolder("src").SubFolder("bin").SubFolder("Release").FullName + @"\Aspenlaub.Net.GitHub.CSharp.Pakled.dll",
             developerSettings.GitHubRepositoryUrl,
             developerSettings.Author,
             developerSettings.FaviconUrl);

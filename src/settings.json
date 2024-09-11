@@ -1,0 +1,10 @@
+{
+  "CsProjNamespaceUri": "http://schemas.microsoft.com/developer/msbuild/2003",
+  "NuSpecNamespaceUri": "http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd",
+  "FirstBuildDate": "2019-07-24",
+  "ContentIncludeFolders": [
+    "build\\",
+    "lib\\",
+    "runtimes\\"
+  ]
+}
