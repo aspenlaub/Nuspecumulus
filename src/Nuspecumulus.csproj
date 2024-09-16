@@ -29,12 +29,16 @@
     <None Remove="Test\**" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Remove="Scripts\NuSpecCreatorCopy.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <None Remove="Scripts\CreateNuSpec.ps1" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\CreateNuSpec.ps1">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="Scripts\NuSpecCreatorCopy.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Autofac" Version="8.1.0" />

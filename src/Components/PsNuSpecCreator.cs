@@ -12,12 +12,38 @@ public static class PsNuSpecCreator {
 
         var assembly = Assembly.GetExecutingAssembly();
         var resourceName = assembly.GetName().Name + ".Scripts.CreateNuSpec.ps1";
-        using var stream = assembly.GetManifestResourceStream(resourceName);
-        if (stream == null) {
-            throw new MissingManifestResourceException(resourceName);
+        string psContents;
+        var psWorkFolder = Directory.GetCurrentDirectory() + @"\..\Work";
+        if (!Directory.Exists(psWorkFolder)) {
+            Directory.CreateDirectory(psWorkFolder);
+        } else {
+            foreach (var fileName in Directory.GetFiles(psWorkFolder, "*.*", SearchOption.AllDirectories)) {
+                File.Delete(fileName);
+            }
         }
-        using var streamReader = new StreamReader(stream, Encoding.UTF8);
-        var psContents = streamReader.ReadToEnd();
+
+        var psFileFullName = psWorkFolder + @"\CreateNuSpec.ps1";
+        using (var stream = assembly.GetManifestResourceStream(resourceName)) {
+            if (stream == null) {
+                throw new MissingManifestResourceException(resourceName);
+            }
+
+            using (var streamReader = new StreamReader(stream, Encoding.UTF8)) {
+                psContents = streamReader.ReadToEnd();
+            }
+            File.WriteAllText(psFileFullName, psContents);
+        }
+
+        var csFileShortName = "NuSpecCreator.cs";
+        resourceName = assembly.GetName().Name + ".Scripts.NuSpecCreatorCopy.cs";
+        using (var stream = assembly.GetManifestResourceStream(resourceName)) {
+            if (stream == null) {
+                throw new MissingManifestResourceException(resourceName);
+            }
+            using var streamReader = new StreamReader(stream, Encoding.UTF8);
+            var csContents = streamReader.ReadToEnd();
+            File.WriteAllText($"{psWorkFolder}\\{csFileShortName}", csContents);
+        }
 
         var nuSpecFileFullName = projectFileFullName.Replace(".csproj", ".nuspec");
         // https://stackoverflow.com/questions/24868273/run-a-c-sharp-cs-file-from-a-powershell-script
@@ -28,11 +54,13 @@ public static class PsNuSpecCreator {
         };
 
         var powershell = PowerShell.Create();
-        powershell.AddScript(string.Join(Environment.NewLine, psContents));
-        powershell.AddParameters(new List<string> { projectFileFullName, organizationUrl, author, faviconUrl, checkedOutBranch, nuSpecFileFullName });
+        powershell.AddScript(psContents);
+        powershell.AddParameters(new List<string> {
+            psWorkFolder, csFileShortName, projectFileFullName, organizationUrl, author, faviconUrl, checkedOutBranch, nuSpecFileFullName
+        });
         powershell.Invoke();
         result.Errors.AddRange(powershell.Streams.Error.Select(e => e.ToString()));
-        result.Infos.AddRange(powershell.Streams.Information.Select(e => e.ToString()));
+        result.Infos.AddRange(powershell.Streams.Debug.Select(e => e.ToString()));
         return result;
     }
 }
