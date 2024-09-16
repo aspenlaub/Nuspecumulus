@@ -11,12 +11,11 @@ $faviconUrl = $args[5]
 $checkedOutBranch = $args[6]
 $nuSpecFileFullName = $args[7]
 
-Set-Location -Path $psWorkFolder
-dotnet new classlib
-Remove-Item Class*.cs
-dotnet publish
+dotnet new classlib --force -o $psWorkFolder
+Remove-Item ($psWorkFolder + "\Class*.cs")
+dotnet publish ($psWorkFolder + "\Work.csproj")
 
-Write-Host $psWorkFolder + "\bin\Release\net8.0\publish\work.dll"
+Write-Host ($psWorkFolder + "\bin\Release\net8.0\publish\work.dll")
 
 #$source = Get-Content -Path "$csFileFullName"
 #$referencedAssemblies = (

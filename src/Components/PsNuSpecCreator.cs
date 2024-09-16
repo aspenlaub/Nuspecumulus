@@ -22,7 +22,8 @@ public static class PsNuSpecCreator {
             }
         }
 
-        var psFileFullName = psWorkFolder + @"\CreateNuSpec.ps1";
+        const string psFileShortName = "CreateNuSpec.ps1";
+        var psFileFullName = psWorkFolder + "\\" + psFileShortName;
         using (var stream = assembly.GetManifestResourceStream(resourceName)) {
             if (stream == null) {
                 throw new MissingManifestResourceException(resourceName);
@@ -34,7 +35,7 @@ public static class PsNuSpecCreator {
             File.WriteAllText(psFileFullName, psContents);
         }
 
-        var csFileShortName = "NuSpecCreator.cs";
+        const string csFileShortName = "NuSpecCreator.cs";
         resourceName = assembly.GetName().Name + ".Scripts.NuSpecCreatorCopy.cs";
         using (var stream = assembly.GetManifestResourceStream(resourceName)) {
             if (stream == null) {
@@ -48,19 +49,22 @@ public static class PsNuSpecCreator {
         var nuSpecFileFullName = projectFileFullName.Replace(".csproj", ".nuspec");
         // https://stackoverflow.com/questions/24868273/run-a-c-sharp-cs-file-from-a-powershell-script
         // https://stackoverflow.com/questions/527513/execute-powershell-script-from-c-sharp-with-commandline-arguments
-        // PowerShell.Create().AddScript()
         var result = new PsCreateNuSpecResult {
             NuSpecFileFullName = nuSpecFileFullName
         };
 
         var powershell = PowerShell.Create();
         powershell.AddScript(psContents);
-        powershell.AddParameters(new List<string> {
+        var psParameters = new List<string> {
             psWorkFolder, csFileShortName, projectFileFullName, organizationUrl, author, faviconUrl, checkedOutBranch, nuSpecFileFullName
-        });
+        };
+        powershell.AddParameters(psParameters);
+        var oneLiner = "& $PSScriptRoot\\" + psFileShortName + " " + string.Join(' ', psParameters.Select(x => '"' + x + '"'));
+        File.WriteAllText($"{psWorkFolder}\\oneLiner.ps1", oneLiner);
+
         powershell.Invoke();
         result.Errors.AddRange(powershell.Streams.Error.Select(e => e.ToString()));
-        result.Infos.AddRange(powershell.Streams.Debug.Select(e => e.ToString()));
+        result.Infos.AddRange(powershell.Streams.Information.Select(e => e.ToString()));
         return result;
     }
 }

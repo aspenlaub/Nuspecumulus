@@ -25,9 +25,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-    <PackageReference Include="Microsoft.Playwright.NUnit" Version="1.46.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="3.5.2" />
-    <PackageReference Include="MSTest.TestFramework" Version="3.5.2" />
+    <PackageReference Include="Microsoft.Playwright.NUnit" Version="1.47.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.6.0" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.6.0" />
     <!-- ReSharper disable once VulnerablePackage -->
     <PackageReference Include="Nuclide" Version="2.0.1857.1092" />
     <PackageReference Include="NUnit" Version="4.2.2" />

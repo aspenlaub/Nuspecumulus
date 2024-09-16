@@ -19,7 +19,7 @@ public class NuSpecCreator : INuSpecCreator {
             throw new InvalidDataException("Settings file not found or corrupt");
         }
 
-        if ((checkedOutBranch != "master") && (checkedOutBranch != "main")) {
+        if (checkedOutBranch != "master" && checkedOutBranch != "main") {
             throw new NotSupportedException("Packaging is restricted to the main branch");
         }
 

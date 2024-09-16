@@ -18,6 +18,7 @@ using System.Xml;
 using Aspenlaub.Net.GitHub.CSharp.Nuclide.Entities;
 using Aspenlaub.Net.GitHub.CSharp.Pegh.Interfaces;
 using System.Text.Json;
+using Aspenlaub.Net.GitHub.CSharp.Gitty.TestUtilities.Aspenlaub.Net.GitHub.CSharp.Gitty.TestUtilities;
 
 namespace Aspenlaub.Net.GitHub.CSharp.Nuspecumulus.Test;
 
@@ -72,19 +73,17 @@ public class NuSpecCreatorTest {
         await CanCreateNuSpecForAsync(PakledTarget, true);
     }
 
-    private async Task CanCreateNuSpecForAsync(TestTargetFolder target, bool usePowershellScript) {
+    private async Task CanCreateNuSpecForAsync(ITestTargetFolder target, bool usePowershellScript) {
         var errorsAndInfos = new ErrorsAndInfos();
         var solutionId = target.SolutionId;
         var url = $"https://github.com/aspenlaub/{solutionId}.git";
         CloneAndBuildTarget(target, url, errorsAndInfos);
 
-        var nuclideDocument = await CreateNuSpecUsingNuclideAsync(target);
-
         var developerSettingsSecret = new DeveloperSettingsSecret();
         var developerSettings = await NuclideContainer.Resolve<ISecretRepository>().GetAsync(developerSettingsSecret, errorsAndInfos);
         Assert.That(developerSettings, Is.Not.Null);
 
-        var versionFile = target.Folder().SubFolder("src").FullName + "\\version.json";
+        var versionFile = target.Folder().SubFolder("src").FullName + "\\" + "version.json";
         if (!File.Exists(versionFile)) {
             var version = new Entities.Version { Major = 2, Minor = 4 };
             await File.WriteAllTextAsync(versionFile, JsonSerializer.Serialize(version));
@@ -92,6 +91,7 @@ public class NuSpecCreatorTest {
 
         var configuration = JsonSerializer.Deserialize<Entities.Configuration>(await File.ReadAllTextAsync("settings.json"));
         Assert.That(configuration, Is.Not.Null);
+        configuration ??= new Entities.Configuration();
 
         string normalizedNuspecumulusFileContents;
         var projectFileFullName = target.Folder().SubFolder("src").FullName + $"\\{solutionId}.csproj";
@@ -117,18 +117,20 @@ public class NuSpecCreatorTest {
                 CheckedOutBranch(target));
             normalizedNuspecumulusFileContents = NormalizeNuspec(nuspecumulusDocument, configuration);
         }
+
+        var nuclideDocument = await CreateNuSpecUsingNuclideAsync(target);
         Assert.That(normalizedNuspecumulusFileContents, Is.EqualTo(NormalizeNuspec(nuclideDocument, configuration)));
     }
 
-    private static string SolutionFileFullName(TestTargetFolder target) {
+    private static string SolutionFileFullName(ITestTargetFolder target) {
         return target.Folder().SubFolder("src").FullName + @"\" + target.SolutionId + ".sln";
     }
 
-    private static string CheckedOutBranch(TestTargetFolder target) {
+    private static string CheckedOutBranch(ITestTargetFolder target) {
         return GitUtilities.CheckedOutBranch(target.Folder());
     }
 
-    private static async Task<XDocument> CreateNuSpecUsingNuclideAsync(TestTargetFolder target) {
+    private static async Task<XDocument> CreateNuSpecUsingNuclideAsync(ITestTargetFolder target) {
         var nuclideCreator = NuclideContainer.Resolve<Nuclide.Interfaces.INuSpecCreator>();
         var solutionFileFullName = SolutionFileFullName(target);
         var projectFileFullName = target.Folder().SubFolder("src").FullName + @"\" + target.SolutionId + ".csproj";
@@ -154,7 +156,7 @@ public class NuSpecCreatorTest {
         return nuclideDocument;
     }
 
-    private static void CloneAndBuildTarget(TestTargetFolder target, string url, ErrorsAndInfos errorsAndInfos) {
+    private static void CloneAndBuildTarget(ITestTargetFolder target, string url, IErrorsAndInfos errorsAndInfos) {
         GitUtilities.Clone(url, "master", target.Folder(), new CloneOptions { BranchName = "master" }, true, errorsAndInfos);
         Assert.That(errorsAndInfos.Errors.Any(), Is.False, errorsAndInfos.ErrorsPlusRelevantInfos());
 
@@ -176,7 +178,7 @@ public class NuSpecCreatorTest {
     private static string NormalizeNuspec(XDocument nuspec, Entities.Configuration configuration) {
         return NormalizeNuspec(nuspec.ToString(), configuration);
     }
-    
+
     private static string NormalizeNuspec(string nuspecAsString, Entities.Configuration configuration) {
         var pos = nuspecAsString.IndexOf(configuration.VersionStartTag, StringComparison.InvariantCulture);
         Assert.That(pos, Is.Positive);
