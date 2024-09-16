@@ -46,7 +46,7 @@ public class NuSpecCreatorTest {
         DeleteTargets();
     }
 
-    private void DeleteTargets() {
+    private static void DeleteTargets() {
         PakledTarget.Delete();
         GittyTarget.Delete();
     }
@@ -59,18 +59,91 @@ public class NuSpecCreatorTest {
 
     [Test]
     public async Task CanCreateNuSpecForPakled() {
-        await CanCreateNuSpecForAsync(PakledTarget);
+        await CanCreateNuSpecForAsync(PakledTarget, false);
     }
 
     [Test]
     public async Task CanCreateNuSpecForGitty() {
-        await CanCreateNuSpecForAsync(GittyTarget);
+        await CanCreateNuSpecForAsync(GittyTarget, false);
     }
 
-    private async Task CanCreateNuSpecForAsync(TestTargetFolder target) {
+    [Test]
+    public async Task CanCreateNuSpecForPakledUsingPowershell() {
+        await CanCreateNuSpecForAsync(PakledTarget, true);
+    }
+
+    private async Task CanCreateNuSpecForAsync(TestTargetFolder target, bool usePowershellScript) {
         var errorsAndInfos = new ErrorsAndInfos();
         var solutionId = target.SolutionId;
         var url = $"https://github.com/aspenlaub/{solutionId}.git";
+        CloneAndBuildTarget(target, url, errorsAndInfos);
+
+        var nuclideDocument = await CreateNuSpecUsingNuclideAsync(target);
+
+        var developerSettingsSecret = new DeveloperSettingsSecret();
+        var developerSettings = await NuclideContainer.Resolve<ISecretRepository>().GetAsync(developerSettingsSecret, errorsAndInfos);
+        Assert.That(developerSettings, Is.Not.Null);
+
+        var versionFile = target.Folder().SubFolder("src").FullName + "\\version.json";
+        if (!File.Exists(versionFile)) {
+            var version = new Entities.Version { Major = 2, Minor = 4 };
+            await File.WriteAllTextAsync(versionFile, JsonSerializer.Serialize(version));
+        }
+
+        var configuration = JsonSerializer.Deserialize<Entities.Configuration>(await File.ReadAllTextAsync("settings.json"));
+        Assert.That(configuration, Is.Not.Null);
+
+        string normalizedNuspecumulusFileContents;
+        if (usePowershellScript) {
+            normalizedNuspecumulusFileContents = "Not implemented yet";
+        } else {
+            var sut = NuspecumulusContainer.Resolve<INuSpecCreator>();
+            var nuspecumulusDocument = await sut.CreateNuSpecAsync(
+                target.Folder().SubFolder("src").FullName + $"\\{solutionId}.csproj",
+                developerSettings.GitHubRepositoryUrl,
+                developerSettings.Author,
+                developerSettings.FaviconUrl,
+                CheckedOutBranch(target));
+            normalizedNuspecumulusFileContents = NormalizeNuspec(nuspecumulusDocument, configuration);
+        }
+        Assert.That(normalizedNuspecumulusFileContents, Is.EqualTo(NormalizeNuspec(nuclideDocument, configuration)));
+    }
+
+    private static string SolutionFileFullName(TestTargetFolder target) {
+        return target.Folder().SubFolder("src").FullName + @"\" + target.SolutionId + ".sln";
+    }
+
+    private static string CheckedOutBranch(TestTargetFolder target) {
+        return GitUtilities.CheckedOutBranch(target.Folder());
+    }
+
+    private static async Task<XDocument> CreateNuSpecUsingNuclideAsync(TestTargetFolder target) {
+        var nuclideCreator = NuclideContainer.Resolve<Nuclide.Interfaces.INuSpecCreator>();
+        var solutionFileFullName = SolutionFileFullName(target);
+        var projectFileFullName = target.Folder().SubFolder("src").FullName + @"\" + target.SolutionId + ".csproj";
+        Assert.That(File.Exists(projectFileFullName), Is.True);
+        var nuclideDocument = XDocument.Load(projectFileFullName);
+        var namespaceManager = new XmlNamespaceManager(new NameTable());
+        namespaceManager.AddNamespace("cp", XmlNamespaces.CsProjNamespaceUri);
+        namespaceManager.AddNamespace("nu", XmlNamespaces.NuSpecNamespaceUri);
+
+        var targetFrameworkElement = nuclideDocument.XPathSelectElements("./Project/PropertyGroup/TargetFramework", namespaceManager).FirstOrDefault();
+        Assert.That(targetFrameworkElement, Is.Not.Null);
+        var rootNamespaceElement = nuclideDocument.XPathSelectElements("./Project/PropertyGroup/RootNamespace", namespaceManager).FirstOrDefault();
+        Assert.That(rootNamespaceElement, Is.Not.Null);
+        var checkedOutBranch = CheckedOutBranch(target);
+        var errorsAndInfos = new ErrorsAndInfos();
+        nuclideDocument = await nuclideCreator.CreateNuSpecAsync(solutionFileFullName, checkedOutBranch,
+            new List<string>(), errorsAndInfos);
+        Assert.That(nuclideDocument, Is.Not.Null);
+        Assert.That(errorsAndInfos.Errors.Any(), Is.False, errorsAndInfos.ErrorsPlusRelevantInfos());
+        var areDocumentsEqual = XNode.DeepEquals(nuclideDocument.Root, nuclideDocument.Root);
+        Assert.That(areDocumentsEqual, Is.True);
+
+        return nuclideDocument;
+    }
+
+    private static void CloneAndBuildTarget(TestTargetFolder target, string url, ErrorsAndInfos errorsAndInfos) {
         GitUtilities.Clone(url, "master", target.Folder(), new CloneOptions { BranchName = "master" }, true, errorsAndInfos);
         Assert.That(errorsAndInfos.Errors.Any(), Is.False, errorsAndInfos.ErrorsPlusRelevantInfos());
 
@@ -87,49 +160,6 @@ public class NuSpecCreatorTest {
         NuclideContainer.Resolve<ITestTargetRunner>().RunBuildCakeScript(BuildCake.Standard, target,
             "ReleaseBuild", errorsAndInfos);
         Assert.That(errorsAndInfos.Errors.Any(), Is.False, errorsAndInfos.ErrorsPlusRelevantInfos());
-
-        var nuclideCreator = NuclideContainer.Resolve<Nuclide.Interfaces.INuSpecCreator>();
-        var solutionFileFullName = target.Folder().SubFolder("src").FullName + @"\" + target.SolutionId + ".sln";
-        var projectFileFullName = target.Folder().SubFolder("src").FullName + @"\" + target.SolutionId + ".csproj";
-        Assert.That(File.Exists(projectFileFullName), Is.True);
-        var nuclideDocument = XDocument.Load(projectFileFullName);
-
-        var namespaceManager = new XmlNamespaceManager(new NameTable());
-        namespaceManager.AddNamespace("cp", XmlNamespaces.CsProjNamespaceUri);
-        namespaceManager.AddNamespace("nu", XmlNamespaces.NuSpecNamespaceUri);
-
-        var targetFrameworkElement = nuclideDocument.XPathSelectElements("./Project/PropertyGroup/TargetFramework", namespaceManager).FirstOrDefault();
-        Assert.That(targetFrameworkElement, Is.Not.Null);
-        var rootNamespaceElement = nuclideDocument.XPathSelectElements("./Project/PropertyGroup/RootNamespace", namespaceManager).FirstOrDefault();
-        Assert.That(rootNamespaceElement, Is.Not.Null);
-        var checkedOutBranch = GitUtilities.CheckedOutBranch(target.Folder());
-        nuclideDocument = await nuclideCreator.CreateNuSpecAsync(solutionFileFullName, checkedOutBranch,
-            new List<string>(), errorsAndInfos);
-        Assert.That(nuclideDocument, Is.Not.Null);
-        Assert.That(errorsAndInfos.Errors.Any(), Is.False, errorsAndInfos.ErrorsPlusRelevantInfos());
-        var areDocumentsEqual = XNode.DeepEquals(nuclideDocument.Root, nuclideDocument.Root);
-        Assert.That(areDocumentsEqual, Is.True);
-
-        var developerSettingsSecret = new DeveloperSettingsSecret();
-        var developerSettings = await NuclideContainer.Resolve<ISecretRepository>().GetAsync(developerSettingsSecret, errorsAndInfos);
-        Assert.That(developerSettings, Is.Not.Null);
-
-        var versionFile = target.Folder().SubFolder("src").FullName + "\\version.json";
-        if (!File.Exists(versionFile)) {
-            var version = new Entities.Version { Major = 2, Minor = 4 };
-            await File.WriteAllTextAsync(versionFile, JsonSerializer.Serialize(version));
-        }
-        var sut = NuspecumulusContainer.Resolve<INuSpecCreator>();
-        var nuspecumulusDocument = await sut.CreateNuSpecAsync(
-            target.Folder().SubFolder("src").FullName + $"\\{solutionId}.csproj",
-            developerSettings.GitHubRepositoryUrl,
-            developerSettings.Author,
-            developerSettings.FaviconUrl,
-            checkedOutBranch);
-
-        var configuration = JsonSerializer.Deserialize<Entities.Configuration>(await File.ReadAllTextAsync("settings.json"));
-        Assert.That(configuration, Is.Not.Null);
-        Assert.That(NormalizeNuspec(nuspecumulusDocument, configuration), Is.EqualTo(NormalizeNuspec(nuclideDocument, configuration)));
     }
 
     private static string NormalizeNuspec(XDocument nuspec, Entities.Configuration configuration) {
