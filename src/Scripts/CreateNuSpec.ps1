@@ -11,21 +11,13 @@ $faviconUrl = $args[5]
 $checkedOutBranch = $args[6]
 $nuSpecFileFullName = $args[7]
 
-dotnet new classlib --force -o $psWorkFolder
+dotnet new classlib --force -o $psWorkFolder -lang "C#" -d
 Remove-Item ($psWorkFolder + "\Class*.cs")
 dotnet publish ($psWorkFolder + "\Work.csproj")
 
-Write-Host ($psWorkFolder + "\bin\Release\net8.0\publish\work.dll")
+$workDll = ($psWorkFolder + "\bin\Release\net8.0\publish\work.dll")
+[System.Reflection.Assembly]::LoadFrom($workDll)
 
-#$source = Get-Content -Path "$csFileFullName"
-#$referencedAssemblies = (
-#	"System.Xml",
-#	"System.Xml.Linq",
-#	"System.Xml.XDocument",
-#	"System.Xml.XPath",
-#	"System.Linq"
-#)
-
-# Add-Type -ReferencedAssemblies $referencedAssemblies -TypeDefinition "$source"
-
-# $nuSpecCreator = New-Object -TypeName NuSpecCreator
+$nuSpecCreator = New-Object -TypeName Aspenlaub.Net.GitHub.CSharp.Nuspecumulus.Components.NuSpecCreator
+$document = $nuSpecCreator.CreateNuSpecAsync($projectFileFullName, $organizationUrl, $author, $faviconUrl, $checkedOutBranch).GetAwaiter().GetResult()
+[System.IO.File]::WriteAllText($nuSpecFileFullName, $document.ToString())

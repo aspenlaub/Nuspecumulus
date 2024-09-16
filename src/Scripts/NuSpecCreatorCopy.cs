@@ -4,6 +4,8 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 
+namespace Aspenlaub.Net.GitHub.CSharp.Nuspecumulus.Components;
+
 public class NuSpecCreator {
     public async Task<XDocument> CreateNuSpecAsync(string projectFileFullName,
             string organizationUrl, string author, string faviconUrl, string checkedOutBranch) {
