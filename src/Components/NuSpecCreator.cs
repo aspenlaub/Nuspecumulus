@@ -81,7 +81,7 @@ public class NuSpecCreator : INuSpecCreator {
         return await Task.FromResult(document);
     }
 
-    protected XElement? ReadMetaData(string solutionId, string checkedOutBranch, XDocument projectDocument,
+    protected static XElement? ReadMetaData(string solutionId, string checkedOutBranch, XDocument projectDocument,
             IDictionary<string, string> dependencyIdsAndVersions, IList<string> tags,
             Entities.Version version, string targetFramework, string organizationUrl, string author, string faviconUrl,
             XmlNamespaceManager namespaceManager, XNamespace nugetNamespace) {
@@ -146,7 +146,7 @@ public class NuSpecCreator : INuSpecCreator {
         return libNetSuffix;
     }
 
-    protected XElement? Files(XDocument projectDocument, XmlNamespaceManager namespaceManager, XNamespace nugetNamespace, Entities.Configuration configuration) {
+    protected static XElement? Files(XDocument projectDocument, XmlNamespaceManager namespaceManager, XNamespace nugetNamespace, Entities.Configuration configuration) {
         var rootNamespaceElement = projectDocument.XPathSelectElements("./Project/PropertyGroup/RootNamespace", namespaceManager).FirstOrDefault();
         if (rootNamespaceElement == null) {
             return null;

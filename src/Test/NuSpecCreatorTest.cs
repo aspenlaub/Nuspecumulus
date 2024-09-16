@@ -94,12 +94,23 @@ public class NuSpecCreatorTest {
         Assert.That(configuration, Is.Not.Null);
 
         string normalizedNuspecumulusFileContents;
+        var projectFileFullName = target.Folder().SubFolder("src").FullName + $"\\{solutionId}.csproj";
         if (usePowershellScript) {
-            normalizedNuspecumulusFileContents = "Not implemented yet";
+            var result = PsNuSpecCreator.CreateNuSpec(
+                projectFileFullName,
+                developerSettings.GitHubRepositoryUrl,
+                developerSettings.Author,
+                developerSettings.FaviconUrl,
+                CheckedOutBranch(target));
+            Assert.That(result.Errors.Any(), Is.False, string.Join(Environment.NewLine, result.Errors));
+            Assert.That(result.NuSpecFileFullName, Is.Not.Null);
+            Assert.That(File.Exists(result.NuSpecFileFullName), Is.True);
+            normalizedNuspecumulusFileContents = NormalizeNuspec(await File.ReadAllTextAsync(result.NuSpecFileFullName),
+                configuration);
         } else {
             var sut = NuspecumulusContainer.Resolve<INuSpecCreator>();
             var nuspecumulusDocument = await sut.CreateNuSpecAsync(
-                target.Folder().SubFolder("src").FullName + $"\\{solutionId}.csproj",
+                projectFileFullName,
                 developerSettings.GitHubRepositoryUrl,
                 developerSettings.Author,
                 developerSettings.FaviconUrl,
@@ -150,8 +161,8 @@ public class NuSpecCreatorTest {
         NuclideContainer.Resolve<IDotNetCakeInstaller>().InstallOrUpdateGlobalDotNetCakeIfNecessary(errorsAndInfos);
         Assert.That(errorsAndInfos.Errors.Any(), Is.False, errorsAndInfos.ErrorsPlusRelevantInfos());
 
-        NuclideContainer.Resolve<IEmbeddedCakeScriptCopier>().CopyCakeScriptEmbeddedInAssembly(Assembly.GetExecutingAssembly(), BuildCake.Standard,
-            target, errorsAndInfos);
+        NuclideContainer.Resolve<IEmbeddedCakeScriptCopier>().CopyCakeScriptEmbeddedInAssembly(Assembly.GetExecutingAssembly(),
+            BuildCake.Standard, target, errorsAndInfos);
         Assert.That(errorsAndInfos.Errors.Any(), Is.False, errorsAndInfos.ErrorsPlusRelevantInfos());
 
         NuclideContainer.Resolve<ITestTargetRunner>().RunBuildCakeScript(BuildCake.Standard, target,
@@ -163,7 +174,10 @@ public class NuSpecCreatorTest {
     }
 
     private static string NormalizeNuspec(XDocument nuspec, Entities.Configuration configuration) {
-        var nuspecAsString = nuspec.ToString();
+        return NormalizeNuspec(nuspec.ToString(), configuration);
+    }
+    
+    private static string NormalizeNuspec(string nuspecAsString, Entities.Configuration configuration) {
         var pos = nuspecAsString.IndexOf(configuration.VersionStartTag, StringComparison.InvariantCulture);
         Assert.That(pos, Is.Positive);
         var pos2 = nuspecAsString.IndexOf(configuration.VersionEndTag, pos + 1, StringComparison.InvariantCulture);
