@@ -3,13 +3,12 @@ using namespace System.Text.Json
 using namespace System.Threading.Tasks
 	
 $psWorkFolder = $args[0]
-$csFileShortName = $args[1]
-$projectFileFullName = $args[2]
-$organizationUrl = $args[3]
-$author = $args[4]
-$faviconUrl = $args[5]
-$checkedOutBranch = $args[6]
-$nuSpecFileFullName = $args[7]
+$projectFileFullName = $args[1]
+$organizationUrl = $args[2]
+$author = $args[3]
+$faviconUrl = $args[4]
+$checkedOutBranch = $args[5]
+$nuSpecFileFullName = $args[6]
 
 dotnet new classlib --force -o $psWorkFolder -lang "C#" -d
 Remove-Item ($psWorkFolder + "\Class*.cs")

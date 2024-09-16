@@ -56,7 +56,7 @@ public static class PsNuSpecCreator {
         var powershell = PowerShell.Create();
         powershell.AddScript(psContents);
         var psParameters = new List<string> {
-            psWorkFolder, csFileShortName, projectFileFullName, organizationUrl, author, faviconUrl, checkedOutBranch, nuSpecFileFullName
+            psWorkFolder, projectFileFullName, organizationUrl, author, faviconUrl, checkedOutBranch, nuSpecFileFullName
         };
         powershell.AddParameters(psParameters);
         var oneLiner = "& $PSScriptRoot\\" + psFileShortName + " " + string.Join(' ', psParameters.Select(x => '"' + x + '"'));
