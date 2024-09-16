@@ -19,13 +19,17 @@ public static class PsNuSpecCreator {
         using var streamReader = new StreamReader(stream, Encoding.UTF8);
         var psContents = streamReader.ReadToEnd();
 
+        var nuSpecFileFullName = projectFileFullName.Replace(".csproj", ".nuspec");
         // https://stackoverflow.com/questions/24868273/run-a-c-sharp-cs-file-from-a-powershell-script
         // https://stackoverflow.com/questions/527513/execute-powershell-script-from-c-sharp-with-commandline-arguments
         // PowerShell.Create().AddScript()
-        var result = new PsCreateNuSpecResult();
+        var result = new PsCreateNuSpecResult {
+            NuSpecFileFullName = nuSpecFileFullName
+        };
 
         var powershell = PowerShell.Create();
         powershell.AddScript(string.Join(Environment.NewLine, psContents));
+        powershell.AddParameters(new List<string> { projectFileFullName, organizationUrl, author, faviconUrl, checkedOutBranch, nuSpecFileFullName });
         powershell.Invoke();
         result.Errors.AddRange(powershell.Streams.Error.Select(e => e.ToString()));
         result.Infos.AddRange(powershell.Streams.Information.Select(e => e.ToString()));
