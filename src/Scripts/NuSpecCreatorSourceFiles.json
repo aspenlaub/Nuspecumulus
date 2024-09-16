@@ -1,0 +1,6 @@
+﻿[
+  "Interfaces/INuSpecCreator.cs",
+  "Entities/Configuration.cs",
+  "Entities/Version.cs",
+  "Components/NuSpecCreator.cs"
+]

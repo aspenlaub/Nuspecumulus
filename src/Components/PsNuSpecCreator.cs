@@ -3,6 +3,7 @@ using System.Management.Automation;
 using System.Reflection;
 using System.Resources;
 using System.Text;
+using System.Text.Json;
 
 namespace Aspenlaub.Net.GitHub.CSharp.Nuspecumulus.Components;
 
@@ -35,20 +36,31 @@ public static class PsNuSpecCreator {
             File.WriteAllText(psFileFullName, psContents);
         }
 
-        const string csFileShortName = "NuSpecCreator.cs";
-        resourceName = assembly.GetName().Name + ".Scripts.NuSpecCreatorCopy.cs";
+        const string sourceFilesJsonShortName = "NuSpecCreatorSourceFiles.json";
+        resourceName = assembly.GetName().Name + ".Scripts." + sourceFilesJsonShortName;
+        var sourceFiles = new List<string>();
         using (var stream = assembly.GetManifestResourceStream(resourceName)) {
             if (stream == null) {
                 throw new MissingManifestResourceException(resourceName);
             }
             using var streamReader = new StreamReader(stream, Encoding.UTF8);
-            var csContents = streamReader.ReadToEnd();
-            File.WriteAllText($"{psWorkFolder}\\{csFileShortName}", csContents);
+            var json = streamReader.ReadToEnd();
+            sourceFiles.AddRange(JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>());
+        }
+
+        foreach (var sourceFile in sourceFiles) {
+            resourceName = assembly.GetName().Name + "." + sourceFile.Replace("/", ".");
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+            if (stream == null) {
+                throw new MissingManifestResourceException(resourceName);
+            }
+            using var streamReader = new StreamReader(stream, Encoding.UTF8);
+            var sourceFileContents = streamReader.ReadToEnd();
+            var sourceFileShortName = sourceFile.Substring(sourceFile.LastIndexOf("/", StringComparison.InvariantCulture) + 1);
+            File.WriteAllText($"{psWorkFolder}\\{sourceFileShortName}", sourceFileContents);
         }
 
         var nuSpecFileFullName = projectFileFullName.Replace(".csproj", ".nuspec");
-        // https://stackoverflow.com/questions/24868273/run-a-c-sharp-cs-file-from-a-powershell-script
-        // https://stackoverflow.com/questions/527513/execute-powershell-script-from-c-sharp-with-commandline-arguments
         var result = new PsCreateNuSpecResult {
             NuSpecFileFullName = nuSpecFileFullName
         };
