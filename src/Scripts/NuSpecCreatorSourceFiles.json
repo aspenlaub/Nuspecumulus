@@ -2,5 +2,6 @@
   "Interfaces/INuSpecCreator.cs",
   "Entities/Configuration.cs",
   "Entities/Version.cs",
-  "Components/NuSpecCreator.cs"
+  "Components/NuSpecCreator.cs",
+  "Scripts/Work.csproj.xml"
 ]

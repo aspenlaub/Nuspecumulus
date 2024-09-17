@@ -10,12 +10,15 @@ $faviconUrl = $args[4]
 $checkedOutBranch = $args[5]
 $nuSpecFileFullName = $args[6]
 
+Write-Host "Downloading required source files"
+
 $baseUrl = "https://raw.githubusercontent.com/aspenlaub/Nuspecumulus/master/src/"
 $url = ($baseUrl + "Scripts/NuSpecCreatorSourceFiles.json")
 $sourceFiles = (New-Object System.Net.WebClient).DownloadString($url) | ConvertFrom-Json
 $workProjId = "Work"
 foreach($sourceFile in $sourceFiles) {
 	$sourceFileShortName = $sourceFile.SubString($sourceFile.LastIndexOf('/') + 1)
+	$sourceFileShortName = $sourceFileShortName.Replace(".csproj.xml", ".csproj")
 	$fileCopyFullName = $psWorkFolder + "\" + $sourceFileShortName
 	if ([System.IO.File]::Exists($fileCopyFullName)) {
 		Write-Host ($fileCopyFullName + " exists")
@@ -31,13 +34,25 @@ foreach($sourceFile in $sourceFiles) {
 	}
 }
 
-dotnet new classlib --force -n $workProjId -o $psWorkFolder -lang "C#" -d
-Remove-Item ($psWorkFolder + "\Class*.cs")
+Write-Host "Creating new class library"
+
+if ($workProjId -ne "Work") {
+	Rename-Item -Path ($psWorkFolder + "\Work.csproj") -NewName ($workProjId + ".csproj")
+}
+
+Write-Host "Publishing project"
+
 dotnet publish ($psWorkFolder + "\" + $workProjId + ".csproj")
+
+Write-Host "Loading dll"
 
 $workDll = ($psWorkFolder + "\bin\Release\net8.0\publish\" + $workProjId + ".dll")
 [System.Reflection.Assembly]::LoadFrom($workDll)
 
+Write-Host "Newing NuSpecCreator"
+
 $nuSpecCreator = New-Object -TypeName Aspenlaub.Net.GitHub.CSharp.Nuspecumulus.Components.NuSpecCreator
 $document = $nuSpecCreator.CreateNuSpecAsync($projectFileFullName, $organizationUrl, $author, $faviconUrl, $checkedOutBranch).GetAwaiter().GetResult()
 [System.IO.File]::WriteAllText($nuSpecFileFullName, $document.ToString())
+
+Write-Host "NuSpec has been saved"

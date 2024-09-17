@@ -12,8 +12,7 @@ public static class PsNuSpecCreator {
             string checkedOutBranch, bool letPowershellDownloadSourceFiles) {
 
         var assembly = Assembly.GetExecutingAssembly();
-        var resourceName = assembly.GetName().Name + ".Scripts.CreateNuSpec.ps1";
-        string psContents;
+        var psContents = "";
         var workSubFolder = letPowershellDownloadSourceFiles ? "Work2" : "Work";
         var psWorkFolder = Directory.GetCurrentDirectory() + @"\..\" + workSubFolder;
         if (!Directory.Exists(psWorkFolder)) {
@@ -25,21 +24,31 @@ public static class PsNuSpecCreator {
         }
 
         const string psFileShortName = "CreateNuSpec.ps1";
-        var psFileFullName = $"{psWorkFolder}\\{psFileShortName}";
-        using (var stream = assembly.GetManifestResourceStream(resourceName)) {
+        var shortNameToQualifiedName = new Dictionary<string, string> {
+            { psFileShortName, "Scripts.CreateNuSpec.ps1" },
+            { "Work.csproj", "Scripts.Work.csproj.xml" }
+        };
+        foreach(var shortAndQualifiedName in shortNameToQualifiedName) {
+            var fileFullName = $"{psWorkFolder}\\{shortAndQualifiedName.Key}";
+            var resourceName = assembly.GetName().Name + "." + shortAndQualifiedName.Value;
+            using var stream = assembly.GetManifestResourceStream(resourceName);
             if (stream == null) {
                 throw new MissingManifestResourceException(resourceName);
             }
 
+            string contents;
             using (var streamReader = new StreamReader(stream, Encoding.UTF8)) {
-                psContents = streamReader.ReadToEnd();
+                contents = streamReader.ReadToEnd();
+                if (shortAndQualifiedName.Key == psFileShortName) {
+                    psContents = contents;
+                }
             }
-            File.WriteAllText(psFileFullName, psContents);
+            File.WriteAllText(fileFullName, contents);
         }
 
         if (!letPowershellDownloadSourceFiles) {
             const string sourceFilesJsonShortName = "NuSpecCreatorSourceFiles.json";
-            resourceName = assembly.GetName().Name + ".Scripts." + sourceFilesJsonShortName;
+            var resourceName = assembly.GetName().Name + ".Scripts." + sourceFilesJsonShortName;
             var sourceFiles = new List<string>();
             using (var stream = assembly.GetManifestResourceStream(resourceName)) {
                 if (stream == null) {

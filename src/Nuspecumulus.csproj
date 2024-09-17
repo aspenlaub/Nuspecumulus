@@ -31,6 +31,7 @@
   <ItemGroup>
     <None Remove="Scripts\CreateNuSpec.ps1" />
     <None Remove="Scripts\NuSpecCreatorSourceFiles.json" />
+    <None Remove="Scripts\Work.csproj.xml" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Components\NuSpecCreator.cs" />
@@ -41,6 +42,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="Scripts\NuSpecCreatorSourceFiles.json" />
+    <EmbeddedResource Include="Scripts\Work.csproj.xml" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Autofac" Version="8.1.0" />
