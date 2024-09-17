@@ -9,12 +9,13 @@ namespace Aspenlaub.Net.GitHub.CSharp.Nuspecumulus.Components;
 
 public static class PsNuSpecCreator {
     public static PsCreateNuSpecResult CreateNuSpec(string projectFileFullName, string organizationUrl, string author, string faviconUrl,
-        string checkedOutBranch) {
+            string checkedOutBranch, bool letPowershellDownloadSourceFiles) {
 
         var assembly = Assembly.GetExecutingAssembly();
         var resourceName = assembly.GetName().Name + ".Scripts.CreateNuSpec.ps1";
         string psContents;
-        var psWorkFolder = Directory.GetCurrentDirectory() + @"\..\Work";
+        var workSubFolder = letPowershellDownloadSourceFiles ? "Work2" : "Work";
+        var psWorkFolder = Directory.GetCurrentDirectory() + @"\..\" + workSubFolder;
         if (!Directory.Exists(psWorkFolder)) {
             Directory.CreateDirectory(psWorkFolder);
         } else {
@@ -24,7 +25,7 @@ public static class PsNuSpecCreator {
         }
 
         const string psFileShortName = "CreateNuSpec.ps1";
-        var psFileFullName = psWorkFolder + "\\" + psFileShortName;
+        var psFileFullName = $"{psWorkFolder}\\{psFileShortName}";
         using (var stream = assembly.GetManifestResourceStream(resourceName)) {
             if (stream == null) {
                 throw new MissingManifestResourceException(resourceName);
@@ -36,28 +37,30 @@ public static class PsNuSpecCreator {
             File.WriteAllText(psFileFullName, psContents);
         }
 
-        const string sourceFilesJsonShortName = "NuSpecCreatorSourceFiles.json";
-        resourceName = assembly.GetName().Name + ".Scripts." + sourceFilesJsonShortName;
-        var sourceFiles = new List<string>();
-        using (var stream = assembly.GetManifestResourceStream(resourceName)) {
-            if (stream == null) {
-                throw new MissingManifestResourceException(resourceName);
+        if (!letPowershellDownloadSourceFiles) {
+            const string sourceFilesJsonShortName = "NuSpecCreatorSourceFiles.json";
+            resourceName = assembly.GetName().Name + ".Scripts." + sourceFilesJsonShortName;
+            var sourceFiles = new List<string>();
+            using (var stream = assembly.GetManifestResourceStream(resourceName)) {
+                if (stream == null) {
+                    throw new MissingManifestResourceException(resourceName);
+                }
+                using var streamReader = new StreamReader(stream, Encoding.UTF8);
+                var json = streamReader.ReadToEnd();
+                sourceFiles.AddRange(JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>());
             }
-            using var streamReader = new StreamReader(stream, Encoding.UTF8);
-            var json = streamReader.ReadToEnd();
-            sourceFiles.AddRange(JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>());
-        }
 
-        foreach (var sourceFile in sourceFiles) {
-            resourceName = assembly.GetName().Name + "." + sourceFile.Replace("/", ".");
-            using var stream = assembly.GetManifestResourceStream(resourceName);
-            if (stream == null) {
-                throw new MissingManifestResourceException(resourceName);
+            foreach (var sourceFile in sourceFiles) {
+                resourceName = assembly.GetName().Name + "." + sourceFile.Replace("/", ".");
+                using var stream = assembly.GetManifestResourceStream(resourceName);
+                if (stream == null) {
+                    throw new MissingManifestResourceException(resourceName);
+                }
+                using var streamReader = new StreamReader(stream, Encoding.UTF8);
+                var sourceFileContents = streamReader.ReadToEnd();
+                var sourceFileShortName = sourceFile.Substring(sourceFile.LastIndexOf("/", StringComparison.InvariantCulture) + 1);
+                File.WriteAllText($"{psWorkFolder}\\{sourceFileShortName}", sourceFileContents);
             }
-            using var streamReader = new StreamReader(stream, Encoding.UTF8);
-            var sourceFileContents = streamReader.ReadToEnd();
-            var sourceFileShortName = sourceFile.Substring(sourceFile.LastIndexOf("/", StringComparison.InvariantCulture) + 1);
-            File.WriteAllText($"{psWorkFolder}\\{sourceFileShortName}", sourceFileContents);
         }
 
         var nuSpecFileFullName = projectFileFullName.Replace(".csproj", ".nuspec");

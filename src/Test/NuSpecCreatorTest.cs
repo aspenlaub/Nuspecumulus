@@ -60,20 +60,25 @@ public class NuSpecCreatorTest {
 
     [Test]
     public async Task CanCreateNuSpecForPakled() {
-        await CanCreateNuSpecForAsync(PakledTarget, false);
+        await CanCreateNuSpecForAsync(PakledTarget, false, false);
     }
 
     [Test]
     public async Task CanCreateNuSpecForGitty() {
-        await CanCreateNuSpecForAsync(GittyTarget, false);
+        await CanCreateNuSpecForAsync(GittyTarget, false, false);
     }
 
     [Test]
     public async Task CanCreateNuSpecForPakledUsingPowershell() {
-        await CanCreateNuSpecForAsync(PakledTarget, true);
+        await CanCreateNuSpecForAsync(PakledTarget, true, false);
     }
 
-    private async Task CanCreateNuSpecForAsync(ITestTargetFolder target, bool usePowershellScript) {
+    [Test]
+    public async Task CanCreateNuSpecForPakledUsingPowershellWithDownload() {
+        await CanCreateNuSpecForAsync(PakledTarget, true, true);
+    }
+
+    private async Task CanCreateNuSpecForAsync(ITestTargetFolder target, bool usePowershellScript, bool letPowershellDownloadSourceFiles) {
         var errorsAndInfos = new ErrorsAndInfos();
         var solutionId = target.SolutionId;
         var url = $"https://github.com/aspenlaub/{solutionId}.git";
@@ -101,7 +106,8 @@ public class NuSpecCreatorTest {
                 developerSettings.GitHubRepositoryUrl,
                 developerSettings.Author,
                 developerSettings.FaviconUrl,
-                CheckedOutBranch(target));
+                CheckedOutBranch(target),
+                letPowershellDownloadSourceFiles);
             Assert.That(result.Errors.Any(), Is.False, string.Join(Environment.NewLine, result.Errors));
             Assert.That(result.NuSpecFileFullName, Is.Not.Null);
             Assert.That(File.Exists(result.NuSpecFileFullName), Is.True);
