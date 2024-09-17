@@ -13,7 +13,7 @@ $nuSpecFileFullName = $args[6]
 Write-Host "Downloading required source files"
 
 $baseUrl = "https://raw.githubusercontent.com/aspenlaub/Nuspecumulus/master/src/"
-$url = ($baseUrl + "Scripts/NuSpecCreatorSourceFiles.json")
+$url = ($baseUrl + "Scripts/NuSpecCreatorSourceFiles.json?g=" + (New-Guid))
 $sourceFiles = (New-Object System.Net.WebClient).DownloadString($url) | ConvertFrom-Json
 $workProjId = "Work"
 foreach($sourceFile in $sourceFiles) {
@@ -24,7 +24,7 @@ foreach($sourceFile in $sourceFiles) {
 		Write-Host ($fileCopyFullName + " exists")
 	} else {
 		$workProjId = "Work2"
-		$url = ($baseUrl + $sourceFile)
+		$url = ($baseUrl + $sourceFile + "?g=" + (New-Guid))
 		Invoke-WebRequest $url -OutFile $fileCopyFullName
 		if ([System.IO.File]::Exists($fileCopyFullName)) {
 			Write-Host ($fileCopyFullName + " has now been downloaded")

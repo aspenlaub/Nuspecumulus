@@ -25,10 +25,12 @@ public static class PsNuSpecCreator {
 
         const string psFileShortName = "CreateNuSpec.ps1";
         var shortNameToQualifiedName = new Dictionary<string, string> {
-            { psFileShortName, "Scripts.CreateNuSpec.ps1" },
-            { "Work.csproj", "Scripts.Work.csproj.xml" }
+            { psFileShortName, "Scripts.CreateNuSpec.ps1" }
         };
-        foreach(var shortAndQualifiedName in shortNameToQualifiedName) {
+        if (!letPowershellDownloadSourceFiles) {
+            shortNameToQualifiedName["Work.csproj"] = "Scripts.Work.csproj.xml";
+        }
+        foreach (var shortAndQualifiedName in shortNameToQualifiedName) {
             var fileFullName = $"{psWorkFolder}\\{shortAndQualifiedName.Key}";
             var resourceName = assembly.GetName().Name + "." + shortAndQualifiedName.Value;
             using var stream = assembly.GetManifestResourceStream(resourceName);
