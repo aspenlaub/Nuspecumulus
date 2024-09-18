@@ -20,9 +20,7 @@ foreach($sourceFile in $sourceFiles) {
 	$sourceFileShortName = $sourceFile.SubString($sourceFile.LastIndexOf('/') + 1)
 	$sourceFileShortName = $sourceFileShortName.Replace(".csproj.xml", ".csproj")
 	$fileCopyFullName = $psWorkFolder + "\" + $sourceFileShortName
-	if ([System.IO.File]::Exists($fileCopyFullName)) {
-		Write-Host ($fileCopyFullName + " exists")
-	} else {
+	if (-not [System.IO.File]::Exists($fileCopyFullName)) {
 		$workProjId = "Work2"
 		$url = ($baseUrl + $sourceFile + "?g=" + (New-Guid))
 		Invoke-WebRequest $url -OutFile $fileCopyFullName
@@ -48,8 +46,6 @@ Write-Host "Loading dll"
 
 $workDll = ($psWorkFolder + "\bin\Release\net8.0\publish\" + $workProjId + ".dll")
 $assembly = [System.Reflection.Assembly]::LoadFrom($workDll)
-$exportedTypes = $assembly.GetExportedTypes()
-$exportedTypes | Get-Member -Static | Write-Host
 
 Write-Host "Newing NuSpecCreator"
 
@@ -59,16 +55,13 @@ $document = $nuSpecCreator.CreateNuSpecAsync($projectFileFullName, $organization
 
 Write-Host "NuSpec has been saved, double-checking"
 
-if ([System.IO.File]::Exists($nuSpecFileFullName)) {
-	Write-Host ("File exists: $nuSpecFileFullName")
-	$length = (Get-Item $nuSpecFileFullName).Length
-	Write-Host ("File size: " + $length)
-	if ($length -eq 0) {
-		throw [System.IO.FileNotFoundException]::new("File is empty: $nuSpecFileFullName")
-	}
-	Write-Host ([System.IO.File]::ReadAllText($nuSpecFileFullName))
-} else {
+if (-not [System.IO.File]::Exists($nuSpecFileFullName)) {
 	throw [System.IO.FileNotFoundException]::new("File not found: $nuSpecFileFullName")
+}
+
+$length = (Get-Item $nuSpecFileFullName).Length
+if ($length -eq 0) {
+	throw [System.IO.FileNotFoundException]::new("File is empty: $nuSpecFileFullName")
 }
 
 Write-Host "Double-Checked"
