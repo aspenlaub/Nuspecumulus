@@ -50,7 +50,7 @@
     <PackageReference Include="System.Text.Json" Version="8.0.4" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="settings.json">
+    <None Update="nuspecumulus.settings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -8,13 +7,15 @@ using Aspenlaub.Net.GitHub.CSharp.Nuspecumulus.Interfaces;
 namespace Aspenlaub.Net.GitHub.CSharp.Nuspecumulus.Components;
 
 public class NuSpecCreator : INuSpecCreator {
+    public readonly DateTime FirstBuildDate = new(2019, 7, 24);
+
     public async Task<XDocument> CreateNuSpecAsync(string projectFileFullName,
-            string organizationUrl, string author, string faviconUrl, string checkedOutBranch) {
+                                                   string organizationUrl, string author, string faviconUrl, string checkedOutBranch) {
         if (!File.Exists(projectFileFullName)) {
             throw new FileNotFoundException(projectFileFullName);
         }
 
-        var configuration = JsonSerializer.Deserialize<Entities.Configuration>(await File.ReadAllTextAsync("settings.json"));
+        var configuration = JsonSerializer.Deserialize<Entities.Configuration>(await File.ReadAllTextAsync("nuspecumulus.settings.json"));
         if (configuration == null) {
             throw new InvalidDataException("Settings file not found or corrupt");
         }
@@ -63,7 +64,7 @@ public class NuSpecCreator : INuSpecCreator {
         if (version == null) {
             return document;
         }
-        version.Build = DateTime.UtcNow.Subtract(DateTime.ParseExact(configuration.FirstBuildDate, "yyyy-MM-dd", CultureInfo.InvariantCulture)).Days;
+        version.Build = DateTime.UtcNow.Subtract(FirstBuildDate).Days;
         version.Revision = (int)Math.Floor(DateTime.UtcNow.Subtract(DateTime.UtcNow.Date).TotalMinutes);
 
         var docElement = new XElement(nugetNamespace + "package");

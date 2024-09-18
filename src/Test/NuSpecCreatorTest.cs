@@ -94,7 +94,7 @@ public class NuSpecCreatorTest {
             await File.WriteAllTextAsync(versionFile, JsonSerializer.Serialize(version));
         }
 
-        var configuration = JsonSerializer.Deserialize<Entities.Configuration>(await File.ReadAllTextAsync("settings.json"));
+        var configuration = JsonSerializer.Deserialize<Entities.Configuration>(await File.ReadAllTextAsync("nuspecumulus.settings.json"));
         Assert.That(configuration, Is.Not.Null);
         configuration ??= new Entities.Configuration();
 
@@ -186,12 +186,15 @@ public class NuSpecCreatorTest {
     }
 
     private static string NormalizeNuspec(string nuspecAsString, Entities.Configuration configuration) {
-        var pos = nuspecAsString.IndexOf(configuration.VersionStartTag, StringComparison.InvariantCulture);
+        const string versionStartTag = "<version>";
+        const string versionEndTag = "</version>";
+
+        var pos = nuspecAsString.IndexOf(versionStartTag, StringComparison.InvariantCulture);
         Assert.That(pos, Is.Positive);
-        var pos2 = nuspecAsString.IndexOf(configuration.VersionEndTag, pos + 1, StringComparison.InvariantCulture);
+        var pos2 = nuspecAsString.IndexOf(versionEndTag, pos + 1, StringComparison.InvariantCulture);
         Assert.That(pos2, Is.Positive);
-        Assert.That(pos2, Is.LessThan(pos + configuration.VersionStartTag.Length + 16));
-        nuspecAsString = nuspecAsString.Substring(0, pos) + "<version />" + nuspecAsString.Substring(pos2 + 1 + configuration.VersionEndTag.Length);
+        Assert.That(pos2, Is.LessThan(pos + versionStartTag.Length + 16));
+        nuspecAsString = nuspecAsString.Substring(0, pos) + "<version />" + nuspecAsString.Substring(pos2 + 1 + versionEndTag.Length);
 
         return nuspecAsString;
     }
