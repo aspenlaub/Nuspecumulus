@@ -47,7 +47,9 @@ dotnet publish ($psWorkFolder + "\" + $workProjId + ".csproj")
 Write-Host "Loading dll"
 
 $workDll = ($psWorkFolder + "\bin\Release\net8.0\publish\" + $workProjId + ".dll")
-[System.Reflection.Assembly]::LoadFrom($workDll)
+$assembly = [System.Reflection.Assembly]::LoadFrom($workDll)
+$exportedTypes = $assembly.GetExportedTypes()
+$exportedTypes | Get-Member -Static | Write-Host
 
 Write-Host "Newing NuSpecCreator"
 
