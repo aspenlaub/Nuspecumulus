@@ -58,11 +58,11 @@ public class NuSpecCreator : INuSpecCreator {
 
         var versionFile = projectFileFullName.Substring(0, projectFileFullName.LastIndexOf('\\') + 1) + "version.json";
         if (!File.Exists(versionFile)) {
-            return document;
+            throw new FileNotFoundException(versionFile);
         }
         var version = JsonSerializer.Deserialize<Entities.Version>(await File.ReadAllTextAsync(versionFile));
         if (version == null) {
-            return document;
+            throw new FileNotFoundException(versionFile);
         }
         version.Build = DateTime.UtcNow.Subtract(FirstBuildDate).Days;
         version.Revision = (int)Math.Floor(DateTime.UtcNow.Subtract(DateTime.UtcNow.Date).TotalMinutes);
@@ -70,11 +70,15 @@ public class NuSpecCreator : INuSpecCreator {
         var docElement = new XElement(nugetNamespace + "package");
         var metaData = ReadMetaData(solutionId, "master", projectDocument, dependencyIdsAndVersions, new List<string>(),
             version, targetFrameworkElement.Value, organizationUrl, author, faviconUrl, namespaceManager, nugetNamespace);
-        if (metaData == null) { return document; }
+        if (metaData == null) {
+            throw new ApplicationException("Could not read meta data");
+        }
 
         docElement.Add(metaData);
         var files = Files(projectDocument, namespaceManager, nugetNamespace, configuration);
-        if (files == null) { return document; }
+        if (files == null) {
+            throw new FileNotFoundException("No file/s found to include");
+        }
 
         docElement.Add(files);
         document.Add(docElement);
