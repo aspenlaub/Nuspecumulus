@@ -57,4 +57,18 @@ $nuSpecCreator = New-Object -TypeName Aspenlaub.Net.GitHub.CSharp.Nuspecumulus.C
 $document = $nuSpecCreator.CreateNuSpecAsync($projectFileFullName, $organizationUrl, $author, $faviconUrl, $checkedOutBranch).GetAwaiter().GetResult()
 [System.IO.File]::WriteAllText($nuSpecFileFullName, $document.ToString())
 
-Write-Host "NuSpec has been saved"
+Write-Host "NuSpec has been saved, double-checking"
+
+if ([System.IO.File]::Exists($nuSpecFileFullName)) {
+	Write-Host ("File exists: $nuSpecFileFullName")
+	$length = (Get-Item $nuSpecFileFullName).Length
+	Write-Host ("File size: " + $length)
+	if ($length -eq 0) {
+		throw [System.IO.FileNotFoundException]::new("File is empty: $nuSpecFileFullName")
+	}
+	Write-Host ([System.IO.File]::ReadAllText($nuSpecFileFullName))
+} else {
+	throw [System.IO.FileNotFoundException]::new("File not found: $nuSpecFileFullName")
+}
+
+Write-Host "Double-Checked"
