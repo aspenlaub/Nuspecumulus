@@ -28,7 +28,7 @@
     <PackageReference Include="Microsoft.Playwright.NUnit" Version="1.47.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="3.6.0" />
     <PackageReference Include="MSTest.TestFramework" Version="3.6.0" />
-    <PackageReference Include="Nuclide" Version="2.0.1883.1149" />
+    <PackageReference Include="Nuclide" Version="2.0.1888.1004" />
     <!-- ReSharper disable once VulnerablePackage -->
     <PackageReference Include="NUnit" Version="4.2.2" />
     <PackageReference Include="NUnit.Analyzers" Version="4.3.0">
