@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
 	<AssemblyName>Aspenlaub.Net.GitHub.CSharp.Nuspecumulus</AssemblyName>
 	<RootNamespace>Aspenlaub.Net.GitHub.CSharp.Nuspecumulus</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -45,7 +45,7 @@
     <EmbeddedResource Include="Scripts\Work.csproj.xml" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="8.1.0" />
+    <PackageReference Include="Autofac" Version="8.1.1" />
     <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.6" />
     <PackageReference Include="System.Text.Json" Version="9.0.0" />
   </ItemGroup>
