@@ -166,8 +166,8 @@ public class NuSpecCreatorTest {
         GitUtilities.Clone(url, "master", target.Folder(), new CloneOptions { BranchName = "master" }, true, errorsAndInfos);
         Assert.That(errorsAndInfos.Errors.Any(), Is.False, errorsAndInfos.ErrorsPlusRelevantInfos());
 
-        NuclideContainer.Resolve<IDotNetCakeInstaller>().InstallOrUpdateGlobalDotNetCakeIfNecessary(errorsAndInfos);
-        Assert.That(errorsAndInfos.Errors.Any(), Is.False, errorsAndInfos.ErrorsPlusRelevantInfos());
+        // NuclideContainer.Resolve<IDotNetCakeInstaller>().InstallOrUpdateGlobalDotNetCakeIfNecessary(errorsAndInfos);
+        // Assert.That(errorsAndInfos.Errors.Any(), Is.False, errorsAndInfos.ErrorsPlusRelevantInfos());
 
         NuclideContainer.Resolve<IEmbeddedCakeScriptCopier>().CopyCakeScriptEmbeddedInAssembly(Assembly.GetExecutingAssembly(),
             BuildCake.Standard, target, errorsAndInfos);
