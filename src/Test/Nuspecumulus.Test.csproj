@@ -28,8 +28,8 @@
     <PackageReference Include="Microsoft.Playwright.NUnit" Version="1.49.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="3.7.0" />
     <PackageReference Include="MSTest.TestFramework" Version="3.7.0" />
-    <PackageReference Include="Nuclide" Version="2.0.1983.833" />
-    <PackageReference Include="NUnit" Version="4.3.1" />
+    <PackageReference Include="Nuclide" Version="2.0.1986.385" />
+    <PackageReference Include="NUnit" Version="4.3.2" />
     <PackageReference Include="NUnit.Analyzers" Version="4.5.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
