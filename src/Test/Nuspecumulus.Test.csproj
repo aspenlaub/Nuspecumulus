@@ -26,8 +26,8 @@
     </PackageReference>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="Microsoft.Playwright.NUnit" Version="1.49.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="3.7.2" />
-    <PackageReference Include="MSTest.TestFramework" Version="3.7.2" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.7.3" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.7.3" />
     <PackageReference Include="Nuclide" Version="2.0.2008.1153" />
     <PackageReference Include="NUnit" Version="4.3.2" />
     <PackageReference Include="NUnit.Analyzers" Version="4.6.0">
